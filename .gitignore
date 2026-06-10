@@ -1,0 +1,10 @@
+result
+build
+
+*.a
+*.o
+
+.direnv
+.cache
+
+.zed
