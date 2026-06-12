@@ -15,6 +15,9 @@
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        llvmPkgs = pkgs.llvmPackages_latest;
+        stdenv = llvmPkgs.stdenv;
+        llvmDir = "${llvmPkgs.llvm.dev}/lib/cmake/llvm";
 
         package = {
           pname = "cuhpiler";
@@ -22,15 +25,24 @@
           src = ./.;
           nativeBuildInputs = with pkgs; [
             cmake
+            ninja
+            pkg-config
           ];
           buildInputs = with pkgs; [
+            llvmPkgs.llvm
           ];
+          cmakeFlags = [ "-DLLVM_DIR=${llvmDir}" ];
         };
       in
       {
         packages = {
-          default = pkgs.clangStdenv.mkDerivation package;
-          debug = pkgs.clangStdenv.mkDerivation (
+          default = stdenv.mkDerivation (
+            package
+            // {
+              cmakeBuildType = "Release";
+            }
+          );
+          debug = stdenv.mkDerivation (
             package
             // {
               cmakeBuildType = "Debug";
@@ -39,13 +51,15 @@
           );
         };
 
-        devShells.default = pkgs.mkShell {
+        devShells.default = pkgs.mkShell.override { inherit stdenv; } {
           inputsFrom = [ self.packages.${system}.default ];
 
           packages = with pkgs; [
             clang-tools
             lldb
           ];
+
+          LLVM_DIR = llvmDir;
         };
       }
     );

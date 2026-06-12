@@ -15,20 +15,40 @@ add_compile_options(
   -Wextra
   -Wpedantic
   -Wshadow
-  -Wconversion
 )
 
 add_executable(${PROJECT_NAME}
   src/cuhpiler.cpp
 )
 
-target_link_options(${PROJECT_NAME} PRIVATE
-  -fsanitize=address,undefined
+target_compile_options(${PROJECT_NAME} PRIVATE
+  $<$<CONFIG:Release>:-O2 -DNDEBUG>
+  $<$<CONFIG:Debug>:-g3 -Og -fsanitize=address,undefined>
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE
-  $<$<CONFIG:Debug>:-g3 -Og -fsanitize=address,undefined>
-  $<$<CONFIG:Release>:-O2 -DNDEBUG>
+target_link_options(${PROJECT_NAME} PRIVATE
+  $<$<CONFIG:Debug>:-fsanitize=address,undefined>
 )
+
+find_package(LLVM REQUIRED CONFIG)
+
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR})
+include(AddLLVM)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${LLVM_INCLUDE_DIRS})
+
+separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${LLVM_DEFINITIONS_LIST})
+
+llvm_map_components_to_libnames(LLVM_LIBS
+  core
+  support
+  irreader
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LLVM_LIBS})
 
 install(TARGETS ${PROJECT_NAME})
