@@ -19,10 +19,12 @@ add_compile_options(
 
 add_executable(${PROJECT_NAME}
   src/cuhpiler.cpp
+  src/lexer.cpp
+  src/parser.cpp
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE
-  $<$<CONFIG:Release>:-O2 -DNDEBUG>
+  $<$<CONFIG:Release>:-O3 -DNDEBUG>
   $<$<CONFIG:Debug>:-g3 -Og -fsanitize=address,undefined>
 )
 

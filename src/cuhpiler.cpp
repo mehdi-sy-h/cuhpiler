@@ -1,62 +1,79 @@
+#include "lexer.hpp"
+#include "parser.hpp"
+
 #include <iostream>
 
-// Following along with LLVM Kaleidescope tutorial
-static std::string IdentifierStr;
-static double NumVal;
+std::string identifierStr;
+double numVal;
+Token::Token curTok;
 
-enum class Token {
-    END_OF_FILE = -1,
-    DEFINITION = -2,
-    EXTERN = -3,
-    IDENTIFIER = -4,
-    NUMBER = -5,
-};
-
-static auto getToken() -> Token {
-    static char LastChar {' '};
-
-    while (std::isspace(LastChar))
-        std::cin.get(LastChar);
-
-    if (std::isalnum(LastChar)) {
-        IdentifierStr = LastChar;
-        while (std::cin.get(LastChar) && std::isalnum(LastChar))
-            IdentifierStr += LastChar;
-
-        if (IdentifierStr == "def")
-            return Token::DEFINITION;
-
-        if (IdentifierStr == "extern")
-            return Token::EXTERN;
-
-        return Token::IDENTIFIER;
+static auto handleTopLevelExpr() {
+    if (parseTopLevelExpr()) {
+        std::cerr << "Parsed a top level expression\n";
+    } else {
+        getNextToken();
     }
-
-    if (std::isdigit(LastChar) || LastChar == '.') {
-        std::string NumStr {LastChar};
-        while (std::cin.get(LastChar) &&
-               (std::isdigit(LastChar) || LastChar == '.'))
-            NumStr += LastChar;
-
-        NumVal = std::strtod(NumStr.c_str(), 0);
-        return Token::NUMBER;
-    }
-
-    if (LastChar == '#') {
-        do
-            std::cin.get(LastChar);
-        while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
-
-        if (LastChar != EOF)
-            return getToken();
-    }
-
-    if (LastChar == EOF)
-        return Token::END_OF_FILE;
-
-    int thisChar {LastChar};
-    std::cin.get(LastChar);
-    return Token {thisChar};
 }
 
-auto main() -> int {}
+static auto handleExtern() {
+    if (parseExtern()) {
+        std::cerr << "Parsed an extern\n";
+    } else {
+        getNextToken();
+    }
+}
+
+static auto handleDefinition() {
+    if (parseDefinition()) {
+        std::cerr << "Parsed a function definition\n";
+    } else {
+        getNextToken();
+    }
+}
+
+// top
+//   ::= definition | external | expression | ';'
+static auto mainLoop() {
+    while (true) {
+        std::cerr << "ready> ";
+        bool quit = curTok.visit(
+            overloads {
+                [](const Token::EndOfFile &) {
+                    return true;
+                },
+                [](const Token::Definition &) {
+                    handleDefinition();
+                    return false;
+                },
+                [](const Token::Extern &) {
+                    handleExtern();
+                    return false;
+                },
+                [](const Token::Unknown &tok) {
+                    if (tok.c == ';') {
+                        getNextToken();
+                    } else {
+                        handleTopLevelExpr();
+                    }
+                    return false;
+                },
+                [](const auto &) {
+                    handleTopLevelExpr();
+                    return false;
+                }
+            }
+        );
+        if (quit)
+            return;
+    }
+}
+
+// Following along with LLVM Kaleidescope tutorial
+auto main() -> int {
+    std::cerr << "ready> ";
+    getNextToken();
+
+    mainLoop();
+
+    return 0;
+}
