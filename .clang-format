@@ -6,4 +6,7 @@ LineEnding: LF
 IndentWidth: 4
 SpaceBeforeCpp11BracedList: true
 AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
+BreakTemplateDeclarations: Yes
+AlignAfterOpenBracket: BlockIndent
 ---
