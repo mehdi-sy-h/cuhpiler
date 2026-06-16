@@ -36,35 +36,26 @@ static auto handleDefinition() {
 static auto mainLoop() {
     while (true) {
         std::cerr << "ready> ";
-        bool quit = curTok.visit(
+
+        if (std::get_if<Token::EndOfFile>(&curTok))
+            return;
+
+        curTok.visit(
             overloads {
-                [](const Token::EndOfFile &) {
-                    return true;
-                },
                 [](const Token::Definition &) {
                     handleDefinition();
-                    return false;
                 },
                 [](const Token::Extern &) {
                     handleExtern();
-                    return false;
                 },
-                [](const Token::Unknown &tok) {
-                    if (tok.c == ';') {
-                        getNextToken();
-                    } else {
-                        handleTopLevelExpr();
-                    }
-                    return false;
+                [](const Token::Semi &) {
+                    getNextToken();
                 },
                 [](const auto &) {
                     handleTopLevelExpr();
-                    return false;
                 }
             }
         );
-        if (quit)
-            return;
     }
 }
 

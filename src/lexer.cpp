@@ -49,6 +49,19 @@ auto getToken() -> const Token::Token {
 
     int thisChar {lastChar};
     lastChar = std::cin.get();
+
+    if (thisChar == '(')
+        return Token::LParen {};
+
+    if (thisChar == ')')
+        return Token::RParen {};
+
+    if (thisChar == ',')
+        return Token::Comma {};
+
+    if (thisChar == ';')
+        return Token::Semi {};
+
     return Token::Unknown {(char)thisChar};
 }
 

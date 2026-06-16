@@ -38,8 +38,7 @@ static auto parseParenExpr() -> std::unique_ptr<AST::Expr> {
     if (!v)
         return nullptr;
 
-    const auto *unknown = std::get_if<Token::Unknown>(&curTok);
-    if (!unknown || unknown->c != ')')
+    if (!std::get_if<Token::RParen>(&curTok))
         return logError("expected ')'");
 
     getNextToken(); // eat )
@@ -55,16 +54,14 @@ static auto parseIdentifierExpr() -> std::unique_ptr<AST::Expr> {
 
     getNextToken(); // eat identifier
 
-    auto *unknown = std::get_if<Token::Unknown>(&curTok);
-    if (!unknown || unknown->c != '(')
+    if (!std::get_if<Token::LParen>(&curTok))
         return std::make_unique<AST::Expr>(AST::VariableExpr {idName});
 
     getNextToken(); // eat (
 
     std::vector<std::unique_ptr<AST::Expr>> args;
-    unknown = std::get_if<Token::Unknown>(&curTok);
 
-    if (!unknown || unknown->c != ')') {
+    if (!std::get_if<Token::RParen>(&curTok)) {
         while (true) {
             if (auto arg = parseExpression()) {
                 args.push_back(std::move(arg));
@@ -72,13 +69,11 @@ static auto parseIdentifierExpr() -> std::unique_ptr<AST::Expr> {
                 return nullptr;
             }
 
-            unknown = std::get_if<Token::Unknown>(&curTok);
-            if (unknown && unknown->c == ')')
+            if (std::get_if<Token::RParen>(&curTok))
                 break;
 
-            if (!unknown || unknown->c != ',') {
+            if (!std::get_if<Token::Comma>(&curTok))
                 return logError("Expected ')' or ',' in argument list");
-            }
 
             getNextToken();
         }
@@ -98,13 +93,10 @@ static auto parsePrimary() -> std::unique_ptr<AST::Expr> {
             [](const Token::Number &) {
                 return parseNumberExpr();
             },
-            [](const auto &tok) {
-                if constexpr (std::is_same_v<
-                                  std::decay_t<decltype(tok)>,
-                                  Token::Unknown>) {
-                    if (tok.c == '(')
-                        return parseParenExpr();
-                }
+            [](const Token::LParen &) {
+                return parseParenExpr();
+            },
+            [](const auto &) {
                 return logError("unknown token when expecting an expression");
             }
         }
@@ -175,8 +167,7 @@ static auto parsePrototype() -> std::unique_ptr<AST::Prototype> {
     std::string fnName = identifierStr;
     getNextToken();
 
-    auto *unknown = std::get_if<Token::Unknown>(&curTok);
-    if (!unknown || unknown->c != '(')
+    if (!std::get_if<Token::LParen>(&curTok))
         return logErrorProto("Expected '(' in prototype");
 
     std::vector<std::string> argNames;
@@ -187,8 +178,7 @@ static auto parsePrototype() -> std::unique_ptr<AST::Prototype> {
         argsTok = getNextToken();
     }
 
-    unknown = std::get_if<Token::Unknown>(&curTok);
-    if (!unknown || unknown->c != ')')
+    if (!std::get_if<Token::RParen>(&curTok))
         return logErrorProto("Expected ')' in prototype");
 
     getNextToken();
