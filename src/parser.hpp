@@ -59,4 +59,4 @@ auto parseDefinition() -> std::unique_ptr<AST::Function>;
 auto parseExtern() -> std::unique_ptr<AST::Prototype>;
 auto parseTopLevelExpr() -> std::unique_ptr<AST::Function>;
 
-#endif
+#endif // CUH_PARSER_HPP

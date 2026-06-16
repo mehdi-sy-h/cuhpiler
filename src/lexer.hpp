@@ -30,4 +30,4 @@ using Token = std::variant<
 auto getToken() -> const Token::Token;
 auto getNextToken() -> Token::Token;
 
-#endif
+#endif // CUH_LEXER_HPP
